@@ -207,6 +207,8 @@ typedef enum{
 	SEARCH_BASE_FREQ_V86_500,
 	SEARCH_BASE_FREQ_V86_600,
 	SEARCH_BASE_FREQ_V86_650,
+	SEARCH_BASE_FREQ_V86_700,
+	SEARCH_BASE_FREQ_V86_712,
 	SEARCH_BASE_FREQ,	// search one freq as start, if found , changed to ALLCHIP_FREQ_UP, if failed, down all chips freq one step and test
 	ALLCHIP_FREQ_UP,	// All chips up one step freq, if pass then continue up, if failed then go to FAILED_CHIP_DOWN
 	FAILED_CHIP_DOWN,	// failed chip down one step, successful chip keep no change.  test OK, then 
@@ -258,7 +260,9 @@ int getVoltageLimitedFromHashrate(int hashrate_GHz)
 #endif
 
 #ifdef S9_63
-	if(hashrate_GHz>=14500)
+	if(hashrate_GHz>=15500)
+		vol_value=860;
+	elseif(hashrate_GHz>=14500)
 		vol_value=870;
 	else if(hashrate_GHz>=14000)
 		vol_value=880;
@@ -332,19 +336,19 @@ int getLimitedHashrateByVoltage(int vol_value)	// hashrate must be less than thi
 	switch(vol_value)
 	{
 	case 940:
-		return 12500;
+		return 13000;
 	case 930:
 	case 920:
-		return 13000;
-	case 910:
 		return 13500;
+	case 910:
+		return 14000;
 	case 900:
 	case 890:
-		return 14000;
-	case 880:
 		return 14500;
-	case 870:
+	case 880:
 		return 15000;
+	case 870:
+		return 15500;
 	default:
 		return 15500;
 	}
@@ -380,6 +384,12 @@ int getLimitedHashrateByVoltage(int vol_value)	// hashrate must be less than thi
 int getNextSearchBaseFreq(int cur_freq)
 {
 	if(cur_freq<0)
+		cur_freq=84;	//712M
+	else if(cur_freq>=82)
+		cur_freq=82;	//700M
+	else if(cur_freq>=82)
+		cur_freq=74;	//650M
+	else if(cur_freq>=74)
 		cur_freq=66;	//600M
 	else if(cur_freq>=66)
 		cur_freq=58;	//550M
@@ -7759,7 +7769,61 @@ static void singleBoardTest(void)
 					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
             }
 			break;
+		case SEARCH_BASE_FREQ_V86_700:
+			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
+			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
+			chain_PassCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;
 
+			Fmax[i]=82;	//700M
+			chain_vol_value[i]=START_VOLTAGE;
+			chain_vol_added[i]=0;
+
+			vol_pic=getPICvoltageFromValue(chain_vol_value[i]);
+			set_pic_voltage(i, vol_pic);
+			
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode set freq=%s voltage=%d on chain[%d]\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+			writeLogFile(logstr);
+
+			for(each_asic_freq = 0; each_asic_freq < ASIC_NUM; each_asic_freq ++)
+            {
+            	last_freq[i][each_asic_freq]=Fmax[i];
+                set_frequency_with_addr_plldatai(Fmax[i],0, each_asic_freq * CHIP_ADDR_INTERVAL,i);
+
+				if(min_Freq>atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					min_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+
+				if(max_Freq<atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+            }
+			break;			
+	case SEARCH_BASE_FREQ_V86_712:
+			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
+			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
+			chain_PassCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;
+
+			Fmax[i]=84;	//712M
+			chain_vol_value[i]=START_VOLTAGE;
+			chain_vol_added[i]=0;
+
+			vol_pic=getPICvoltageFromValue(chain_vol_value[i]);
+			set_pic_voltage(i, vol_pic);
+			
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode set freq=%s voltage=%d on chain[%d]\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+			writeLogFile(logstr);
+
+			for(each_asic_freq = 0; each_asic_freq < ASIC_NUM; each_asic_freq ++)
+            {
+            	last_freq[i][each_asic_freq]=Fmax[i];
+                set_frequency_with_addr_plldatai(Fmax[i],0, each_asic_freq * CHIP_ADDR_INTERVAL,i);
+
+				if(min_Freq>atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					min_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+
+				if(max_Freq<atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+            }
+			break;		
+			
 		case SEARCH_BASE_FREQ_V89_500:
 			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
 			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
@@ -7843,6 +7907,63 @@ static void singleBoardTest(void)
 					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
             }
 			break;
+
+			case SEARCH_BASE_FREQ_V89_700:
+			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
+			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
+			chain_PassCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;
+
+			Fmax[i]=82;	//700M
+			chain_vol_value[i]=RETRY_VOLTAGE;
+			chain_vol_added[i]=0;
+
+			vol_pic=getPICvoltageFromValue(chain_vol_value[i]);
+			set_pic_voltage(i, vol_pic);
+			
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode set freq=%s voltage=%d on chain[%d]\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+			writeLogFile(logstr);
+
+			for(each_asic_freq = 0; each_asic_freq < ASIC_NUM; each_asic_freq ++)
+            {
+            	last_freq[i][each_asic_freq]=Fmax[i];
+                set_frequency_with_addr_plldatai(Fmax[i],0, each_asic_freq * CHIP_ADDR_INTERVAL,i);
+
+				if(min_Freq>atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					min_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+
+				if(max_Freq<atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+            }
+			break;
+			
+			case SEARCH_BASE_FREQ_V89_712:
+			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
+			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
+			chain_PassCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;
+
+			Fmax[i]=84;	//712M
+			chain_vol_value[i]=RETRY_VOLTAGE;
+			chain_vol_added[i]=0;
+
+			vol_pic=getPICvoltageFromValue(chain_vol_value[i]);
+			set_pic_voltage(i, vol_pic);
+			
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode set freq=%s voltage=%d on chain[%d]\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+			writeLogFile(logstr);
+
+			for(each_asic_freq = 0; each_asic_freq < ASIC_NUM; each_asic_freq ++)
+            {
+            	last_freq[i][each_asic_freq]=Fmax[i];
+                set_frequency_with_addr_plldatai(Fmax[i],0, each_asic_freq * CHIP_ADDR_INTERVAL,i);
+
+				if(min_Freq>atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					min_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+
+				if(max_Freq<atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+            }
+			break;
+			
 #else
     	case SEARCH_BASE_FREQ:
 			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
