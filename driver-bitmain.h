@@ -908,7 +908,7 @@ extern int HIGHEST_FREQ_INDEX;
 
 #define RETRY_FREQ_INDEX	12	// 12:400M, if search base freq < 400M, will switch to use RETRY_VOLTAGE to search again.
 #define LOWEST_FREQ_INDEX	4	// 8:300M       6:250M		4:200M		8:300M for debug
-#define HIGHEST_FREQ_INDEX	85	// 850M:100 700M:82  668M:77	85:718M	12:400M for debug
+#define HIGHEST_FREQ_INDEX	87	// 850M:100 700M:82  668M:77	85:718M	12:400M for debug
 #define ACCEPT_BADCORE_FREQ_INDEX	HIGHEST_FREQ_INDEX //44:500M  66:600M 	// we just accept bad cores for all freq when test in 8xPatten, so we set highest freq here
 
 #define BAUD_LEVEL			0

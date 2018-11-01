@@ -203,10 +203,14 @@ typedef enum{
 	SEARCH_BASE_FREQ_V89_500,
 	SEARCH_BASE_FREQ_V89_600,
 	SEARCH_BASE_FREQ_V89_650,
+	SEARCH_BASE_FREQ_V89_700,
+	SEARCH_BASE_FREQ_V89_712,
 	SEARCH_BASE_FREQ_V86_400,
 	SEARCH_BASE_FREQ_V86_500,
 	SEARCH_BASE_FREQ_V86_600,
 	SEARCH_BASE_FREQ_V86_650,
+	SEARCH_BASE_FREQ_V86_700,
+	SEARCH_BASE_FREQ_V86_712,
 	SEARCH_BASE_FREQ,	// search one freq as start, if found , changed to ALLCHIP_FREQ_UP, if failed, down all chips freq one step and test
 	ALLCHIP_FREQ_UP,	// All chips up one step freq, if pass then continue up, if failed then go to FAILED_CHIP_DOWN
 	FAILED_CHIP_DOWN,	// failed chip down one step, successful chip keep no change.  test OK, then 
@@ -258,7 +262,9 @@ int getVoltageLimitedFromHashrate(int hashrate_GHz)
 #endif
 
 #ifdef S9_63
-	if(hashrate_GHz>=14500)
+	if(hashrate_GHz>=15500)
+		vol_value=860;
+	elseif(hashrate_GHz>=14500)
 		vol_value=870;
 	else if(hashrate_GHz>=14000)
 		vol_value=880;
@@ -332,19 +338,19 @@ int getLimitedHashrateByVoltage(int vol_value)	// hashrate must be less than thi
 	switch(vol_value)
 	{
 	case 940:
-		return 12500;
+		return 13000;
 	case 930:
 	case 920:
-		return 13000;
-	case 910:
 		return 13500;
+	case 910:
+		return 14000;
 	case 900:
 	case 890:
-		return 14000;
-	case 880:
 		return 14500;
-	case 870:
+	case 880:
 		return 15000;
+	case 870:
+		return 15500;
 	default:
 		return 15500;
 	}
@@ -380,6 +386,12 @@ int getLimitedHashrateByVoltage(int vol_value)	// hashrate must be less than thi
 int getNextSearchBaseFreq(int cur_freq)
 {
 	if(cur_freq<0)
+		cur_freq=84;	//712M
+	else if(cur_freq>=82)
+		cur_freq=82;	//700M
+	else if(cur_freq>=82)
+		cur_freq=74;	//650M
+	else if(cur_freq>=74)
 		cur_freq=66;	//600M
 	else if(cur_freq>=66)
 		cur_freq=58;	//550M
@@ -7759,7 +7771,61 @@ static void singleBoardTest(void)
 					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
             }
 			break;
+		case SEARCH_BASE_FREQ_V86_700:
+			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
+			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
+			chain_PassCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;
 
+			Fmax[i]=82;	//700M
+			chain_vol_value[i]=START_VOLTAGE;
+			chain_vol_added[i]=0;
+
+			vol_pic=getPICvoltageFromValue(chain_vol_value[i]);
+			set_pic_voltage(i, vol_pic);
+			
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode set freq=%s voltage=%d on chain[%d]\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+			writeLogFile(logstr);
+
+			for(each_asic_freq = 0; each_asic_freq < ASIC_NUM; each_asic_freq ++)
+            {
+            	last_freq[i][each_asic_freq]=Fmax[i];
+                set_frequency_with_addr_plldatai(Fmax[i],0, each_asic_freq * CHIP_ADDR_INTERVAL,i);
+
+				if(min_Freq>atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					min_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+
+				if(max_Freq<atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+            }
+			break;			
+	case SEARCH_BASE_FREQ_V86_712:
+			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
+			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
+			chain_PassCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;
+
+			Fmax[i]=84;	//712M
+			chain_vol_value[i]=START_VOLTAGE;
+			chain_vol_added[i]=0;
+
+			vol_pic=getPICvoltageFromValue(chain_vol_value[i]);
+			set_pic_voltage(i, vol_pic);
+			
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode set freq=%s voltage=%d on chain[%d]\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+			writeLogFile(logstr);
+
+			for(each_asic_freq = 0; each_asic_freq < ASIC_NUM; each_asic_freq ++)
+            {
+            	last_freq[i][each_asic_freq]=Fmax[i];
+                set_frequency_with_addr_plldatai(Fmax[i],0, each_asic_freq * CHIP_ADDR_INTERVAL,i);
+
+				if(min_Freq>atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					min_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+
+				if(max_Freq<atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+            }
+			break;		
+			
 		case SEARCH_BASE_FREQ_V89_500:
 			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
 			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
@@ -7843,6 +7909,63 @@ static void singleBoardTest(void)
 					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
             }
 			break;
+
+		case SEARCH_BASE_FREQ_V89_700:
+			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
+			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
+			chain_PassCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;
+
+			Fmax[i]=82;	//700M
+			chain_vol_value[i]=RETRY_VOLTAGE;
+			chain_vol_added[i]=0;
+
+			vol_pic=getPICvoltageFromValue(chain_vol_value[i]);
+			set_pic_voltage(i, vol_pic);
+			
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode set freq=%s voltage=%d on chain[%d]\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+			writeLogFile(logstr);
+
+			for(each_asic_freq = 0; each_asic_freq < ASIC_NUM; each_asic_freq ++)
+            {
+            	last_freq[i][each_asic_freq]=Fmax[i];
+                set_frequency_with_addr_plldatai(Fmax[i],0, each_asic_freq * CHIP_ADDR_INTERVAL,i);
+
+				if(min_Freq>atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					min_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+
+				if(max_Freq<atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+            }
+			break;
+			
+		case SEARCH_BASE_FREQ_V89_712:
+			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
+			chain_ValidNonce[i]=SEARCH_BASEFREQ_NONCE_NUM;
+			chain_PassCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;
+
+			Fmax[i]=84;	//712M
+			chain_vol_value[i]=RETRY_VOLTAGE;
+			chain_vol_added[i]=0;
+
+			vol_pic=getPICvoltageFromValue(chain_vol_value[i]);
+			set_pic_voltage(i, vol_pic);
+			
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode set freq=%s voltage=%d on chain[%d]\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+			writeLogFile(logstr);
+
+			for(each_asic_freq = 0; each_asic_freq < ASIC_NUM; each_asic_freq ++)
+            {
+            	last_freq[i][each_asic_freq]=Fmax[i];
+                set_frequency_with_addr_plldatai(Fmax[i],0, each_asic_freq * CHIP_ADDR_INTERVAL,i);
+
+				if(min_Freq>atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					min_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+
+				if(max_Freq<atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq))
+					max_Freq=atoi(freq_pll_1385[last_freq[i][each_asic_freq]].freq);
+            }
+			break;
+			
 #else
     	case SEARCH_BASE_FREQ:
 			chain_DataCount[i]=SEARCH_BASEFREQ_PATTEN_NUM;	// when seaching base freq, we use 8*144 patten on chip
@@ -8702,6 +8825,84 @@ static void singleBoardTest(void)
 			}
 			break;
 			
+		case SEARCH_BASE_FREQ_V86_700:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(isChainAsicTempBadCoreCanAccepted(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode 700M badcore can be accepted on chain[%d], force goto ALLCHIP_FREQ_UP\n", i);
+				writeLogFile(logstr);
+			
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			else
+			{
+				// copy 500M badcore flag into asic core enabled flag
+				copyAsicCoreEnabledFlagFromLast(i);
+
+				Fmax[i]=74;	//650M
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode failed. use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			break;
+				
+		case SEARCH_BASE_FREQ_V86_712:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(isChainAsicTempBadCoreCanAccepted(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode 712M badcore can be accepted on chain[%d], force goto ALLCHIP_FREQ_UP\n", i);
+				writeLogFile(logstr);
+			
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			else
+			{
+				// copy 500M badcore flag into asic core enabled flag
+				copyAsicCoreEnabledFlagFromLast(i);
+
+				Fmax[i]=82;	//700M
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode failed. use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			break;				
+				
 		case SEARCH_BASE_FREQ_V89_500:
 			//get current bad core flag into temp_asic_core_enabled_flag
 			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
@@ -8808,6 +9009,85 @@ static void singleBoardTest(void)
 				set_result_all_pass(i);
 			}
 			break;
+				
+		case SEARCH_BASE_FREQ_V89_700:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(isChainAsicTempBadCoreCanAccepted(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode 700M badcore can be accepted on chain[%d], force goto ALLCHIP_FREQ_UP\n", i);
+				writeLogFile(logstr);
+			
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			else
+			{
+				// copy 500M badcore flag into asic core enabled flag
+				copyAsicCoreEnabledFlagFromLast(i);
+
+				Fmax[i]=74;	//650M
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			break;
+				
+		case SEARCH_BASE_FREQ_V89_712:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(isChainAsicTempBadCoreCanAccepted(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode 712M badcore can be accepted on chain[%d], force goto ALLCHIP_FREQ_UP\n", i);
+				writeLogFile(logstr);
+			
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			else
+			{
+				// copy 500M badcore flag into asic core enabled flag
+				copyAsicCoreEnabledFlagFromLast(i);
+
+				Fmax[i]=82;	//700M
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			break;
+				
 #elif USE_SEARCH_BASEFREQ_MODE == 3
 		case SEARCH_BASE_FREQ_V89_200:
 			//save to last_asic_core_enabled_flag
@@ -8997,37 +9277,25 @@ static void singleBoardTest(void)
 
 			if(isLastAsicGoodCoreNumLessThanTempAsicGoodCoreNum(i))
 			{
-				copyAsicCoreEnabledFlagFromTemp(i);
-				
-				sprintf(logstr,"SEARCH_BASE_FREQ_V89_600 mode badcore is same as last on chain[%d], goto ALLCHIP_FREQ_UP\n", i);
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_600 mode badcore is same as last on chain[%d], force goto SEARCH_BASE_FREQ_V86_500\n", i);
 				writeLogFile(logstr);
 				
 				searchFreqMode[i]=ALLCHIP_FREQ_UP;
-				base_freq_index[i]=Fmax[i];
-				for(j = 0; j < ASIC_NUM; j++)
-	            	last_freq[i][j]=Fmax[i];
-				
-				set_result_all_pass(i);
 			}
 			else
 			{
 				if(isChainAsicTempBadCoreCanAccepted(i))
 				{
-					copyAsicCoreEnabledFlagFromTemp(i);
-				
-					sprintf(logstr,"SEARCH_BASE_FREQ_V89_600 mode badcore is same as last on chain[%d], goto ALLCHIP_FREQ_UP\n", i);
+					SaveAsicCoreEnabledFlagByResultToLastRecord(i);
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_600 mode 600M badcore can be accepted on chain[%d], force goto SEARCH_BASE_FREQ_V86_500\n", i);
 					writeLogFile(logstr);
-					
+				
 					searchFreqMode[i]=ALLCHIP_FREQ_UP;
-					base_freq_index[i]=Fmax[i];
-					for(j = 0; j < ASIC_NUM; j++)
-		            	last_freq[i][j]=Fmax[i];
-					
-					set_result_all_pass(i);
 				}
 				else
 				{
-					// copy 500M badcore flag into asic core enabled flag
+					// copy 8.9V 400M badcore flag into asic core enabled flag
 					copyAsicCoreEnabledFlagFromLast(i);
 
 					Fmax[i]=44;	//500M
@@ -9044,7 +9312,318 @@ static void singleBoardTest(void)
 				}
 			}
 			break;
+				
+		case SEARCH_BASE_FREQ_V89_650:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_650 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
 
+			if(isLastAsicGoodCoreNumLessThanTempAsicGoodCoreNum(i))
+			{
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_650 mode badcore is same as last on chain[%d], force goto SEARCH_BASE_FREQ_V86_500\n", i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					SaveAsicCoreEnabledFlagByResultToLastRecord(i);
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_650 mode 650M badcore can be accepted on chain[%d], force goto SEARCH_BASE_FREQ_V86_500\n", i);
+					writeLogFile(logstr);
+				
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				}
+				else
+				{
+					// copy 8.9V 400M badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromLast(i);
+
+					Fmax[i]=66;	//600M
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_650 mode use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+			}
+			break;				
+		case SEARCH_BASE_FREQ_V89_700:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(isLastAsicGoodCoreNumLessThanTempAsicGoodCoreNum(i))
+			{
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode badcore is same as last on chain[%d], force goto SEARCH_BASE_FREQ_V86_500\n", i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					SaveAsicCoreEnabledFlagByResultToLastRecord(i);
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode 700M badcore can be accepted on chain[%d], force goto SEARCH_BASE_FREQ_V86_500\n", i);
+					writeLogFile(logstr);
+				
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				}
+				else
+				{
+					// copy 8.9V 400M badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromLast(i);
+
+					Fmax[i]=74;	//650M
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+			}
+			break;		
+				
+		case SEARCH_BASE_FREQ_V89_712:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(isLastAsicGoodCoreNumLessThanTempAsicGoodCoreNum(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+				
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode badcore is same as last on chain[%d], goto ALLCHIP_FREQ_UP\n", i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					copyAsicCoreEnabledFlagFromTemp(i);
+				
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode badcore is same as last on chain[%d], goto ALLCHIP_FREQ_UP\n", i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+				else
+				{
+					// copy 500M badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromLast(i);
+
+					Fmax[i]=82;	//700M
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+			}
+			break;
+				
+		case SEARCH_BASE_FREQ_V86_712:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(isLastAsicGoodCoreNumLessThanTempAsicGoodCoreNum(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+				
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode badcore is same as last on chain[%d], goto ALLCHIP_FREQ_UP\n", i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					copyAsicCoreEnabledFlagFromTemp(i);
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode 712M badcore can be accepted on chain[%d], force goto ALLCHIP_FREQ_UP\n", i);
+					writeLogFile(logstr);
+				
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+				else
+				{
+					// copy 8.9V 600M badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromLast(i);
+
+					Fmax[i]=82;	//700M   just use same voltage and back to 500M
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode failed, will use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+			}
+			break;				
+				
+		case SEARCH_BASE_FREQ_V86_700:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(isLastAsicGoodCoreNumLessThanTempAsicGoodCoreNum(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+				
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode badcore is same as last on chain[%d], goto ALLCHIP_FREQ_UP\n", i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					copyAsicCoreEnabledFlagFromTemp(i);
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode 700M badcore can be accepted on chain[%d], force goto ALLCHIP_FREQ_UP\n", i);
+					writeLogFile(logstr);
+				
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+				else
+				{
+					// copy 8.9V 600M badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromLast(i);
+
+					Fmax[i]=74;	//650M   just use same voltage and back to 500M
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode failed, will use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+			}
+			break;
+				
+		case SEARCH_BASE_FREQ_V86_650:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(isLastAsicGoodCoreNumLessThanTempAsicGoodCoreNum(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+				
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 mode badcore is same as last on chain[%d], goto ALLCHIP_FREQ_UP\n", i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+				
+				set_result_all_pass(i);
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					copyAsicCoreEnabledFlagFromTemp(i);
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 mode 650M badcore can be accepted on chain[%d], force goto ALLCHIP_FREQ_UP\n", i);
+					writeLogFile(logstr);
+				
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+				else
+				{
+					// copy 8.9V 600M badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromLast(i);
+
+					Fmax[i]=66;	//600M   just use same voltage and back to 500M
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 mode failed, will use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+			}
+			break;
+		
 		case SEARCH_BASE_FREQ_V86_600:
 			//get current bad core flag into temp_asic_core_enabled_flag
 			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
@@ -9136,10 +9715,10 @@ static void singleBoardTest(void)
 			break;
 
 #elif USE_SEARCH_BASEFREQ_MODE == 4
-		case SEARCH_BASE_FREQ_V86_650:
+		case SEARCH_BASE_FREQ_V86_712:
 			//get current bad core flag into temp_asic_core_enabled_flag
 			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
-			sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
 			writeLogFile(logstr);
 
 			if(last_all_pass(i))
@@ -9147,7 +9726,7 @@ static void singleBoardTest(void)
 				// copy badcore flag into asic core enabled flag
 				copyAsicCoreEnabledFlagFromTemp(i);
 				
-				sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 use current badcore flag on chain[%d], goto ALLCHIP_FREQ_UP on 650M\n", i);
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 use current badcore flag on chain[%d], goto ALLCHIP_FREQ_UP on 650M\n", i);
 				writeLogFile(logstr);
 				
 				searchFreqMode[i]=ALLCHIP_FREQ_UP;
@@ -9162,7 +9741,7 @@ static void singleBoardTest(void)
 					// copy badcore flag into asic core enabled flag
 					copyAsicCoreEnabledFlagFromTemp(i);
 					
-					sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 use current badcore flag on chain[%d], goto ALLCHIP_FREQ_UP on 650M\n", i);
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 use current badcore flag on chain[%d], goto ALLCHIP_FREQ_UP on 650M\n", i);
 					writeLogFile(logstr);
 					
 					searchFreqMode[i]=ALLCHIP_FREQ_UP;
@@ -9174,13 +9753,105 @@ static void singleBoardTest(void)
 				}
 				else
 				{
-					sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 mode has too many badcore on chain[%d], goto SEARCH_BASE_FREQ_V86_600\n", i);
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_712 mode has too many badcore on chain[%d], goto SEARCH_BASE_FREQ_V86_600\n", i);
 					writeLogFile(logstr);
 				
 					searchFreqMode[i]=ALLCHIP_FREQ_UP;
 				}
 			}
 			break;
+				
+		case SEARCH_BASE_FREQ_V86_700:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(last_all_pass(i))
+			{
+				// copy badcore flag into asic core enabled flag
+				copyAsicCoreEnabledFlagFromTemp(i);
+				
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 use current badcore flag on chain[%d], goto ALLCHIP_FREQ_UP on 600M\n", i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					// copy badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromTemp(i);
+					
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 use current badcore flag on chain[%d], goto ALLCHIP_FREQ_UP on 600M\n", i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+				else
+				{
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_700 mode has too many badcore on chain[%d], goto SEARCH_BASE_FREQ_V86_500\n", i);
+					writeLogFile(logstr);
+				
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				}
+			}
+			break;				
+				
+		case SEARCH_BASE_FREQ_V86_650:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(last_all_pass(i))
+			{
+				// copy badcore flag into asic core enabled flag
+				copyAsicCoreEnabledFlagFromTemp(i);
+				
+				sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 use current badcore flag on chain[%d], goto ALLCHIP_FREQ_UP on 600M\n", i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					// copy badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromTemp(i);
+					
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 use current badcore flag on chain[%d], goto ALLCHIP_FREQ_UP on 600M\n", i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+				else
+				{
+					sprintf(logstr,"SEARCH_BASE_FREQ_V86_650 mode has too many badcore on chain[%d], goto SEARCH_BASE_FREQ_V86_500\n", i);
+					writeLogFile(logstr);
+				
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				}
+			}
+			break;				
 
 		case SEARCH_BASE_FREQ_V86_600:
 			//get current bad core flag into temp_asic_core_enabled_flag
@@ -9359,6 +10030,114 @@ static void singleBoardTest(void)
 				}
 			}
 			break;
+
+		case SEARCH_BASE_FREQ_V89_712:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(last_all_pass(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode test OK, use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					copyAsicCoreEnabledFlagFromTemp(i);
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode test OK, use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+				else
+				{
+					// copy last time's badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromLast(i);
+
+					Fmax[i]=82;	//700M
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_712 mode has too many badcores,will use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+			}
+			break;				
+				
+		case SEARCH_BASE_FREQ_V89_700:
+			//get current bad core flag into temp_asic_core_enabled_flag
+			SaveAsicCoreEnabledFlagByResultToTempRecord(i);
+			sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode badcore num=%d on chain[%d]\n", getChainTempBadCoreNum(i), i);
+			writeLogFile(logstr);
+
+			if(last_all_pass(i))
+			{
+				copyAsicCoreEnabledFlagFromTemp(i);
+
+				sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode test OK, use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+				writeLogFile(logstr);
+				
+				searchFreqMode[i]=ALLCHIP_FREQ_UP;
+				base_freq_index[i]=Fmax[i];
+				for(j = 0; j < ASIC_NUM; j++)
+	            	last_freq[i][j]=Fmax[i];
+			}
+			else
+			{
+				if(isChainAsicTempBadCoreCanAccepted(i))
+				{
+					copyAsicCoreEnabledFlagFromTemp(i);
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode test OK, use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+				else
+				{
+					// copy last time's badcore flag into asic core enabled flag
+					copyAsicCoreEnabledFlagFromLast(i);
+
+					Fmax[i]=74;	//650M
+
+					sprintf(logstr,"SEARCH_BASE_FREQ_V89_700 mode has too many badcores,will use freq=%s voltage=%d on chain[%d], goto ALLCHIP_FREQ_UP\n",freq_pll_1385[Fmax[i]].freq, chain_vol_value[i], i);
+					writeLogFile(logstr);
+					
+					searchFreqMode[i]=ALLCHIP_FREQ_UP;
+					base_freq_index[i]=Fmax[i];
+					for(j = 0; j < ASIC_NUM; j++)
+		            	last_freq[i][j]=Fmax[i];
+					
+					set_result_all_pass(i);
+				}
+			}
+			break;				
 
 		case SEARCH_BASE_FREQ_V89_650:
 			//get current bad core flag into temp_asic_core_enabled_flag
@@ -11142,7 +11921,7 @@ int main(int argc, char* argv[])
 #if ((USE_SEARCH_BASEFREQ_MODE == 2) || (USE_SEARCH_BASEFREQ_MODE == 3))
 		searchFreqMode[i]=SEARCH_BASE_FREQ_V89_200;
 #elif USE_SEARCH_BASEFREQ_MODE == 4
-		searchFreqMode[i]=SEARCH_BASE_FREQ_V86_650;
+		searchFreqMode[i]=SEARCH_BASE_FREQ_V86_712;
 #else
 		searchFreqMode[i]=SEARCH_BASE_FREQ;
 #endif
