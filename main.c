@@ -264,7 +264,7 @@ int getVoltageLimitedFromHashrate(int hashrate_GHz)
 #ifdef S9_63
 	if(hashrate_GHz>=15500)
 		vol_value=860;
-	elseif(hashrate_GHz>=14500)
+	else if(hashrate_GHz>=14500)
 		vol_value=870;
 	else if(hashrate_GHz>=14000)
 		vol_value=880;
